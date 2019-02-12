@@ -43,11 +43,10 @@ void render(driver_state& state, render_type type)
 
             const data_geometry* temp[3];
 
-
-
             for (size_t i = 0; i < 3; i++) {
 
-                //index for state.vertex_data; see driver_state.h
+                //index for state.vertex_data
+                //see driver_state.h for why we have to do this madness
                 size_t j = i * state.floats_per_vertex;
 
                 temp[i] = new data_geometry();
