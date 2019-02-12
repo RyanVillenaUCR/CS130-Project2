@@ -16,11 +16,15 @@ driver_state::~driver_state()
 // are not known when this class is constructed.
 void initialize_render(driver_state& state, int width, int height)
 {
+
     state.image_width=width;
     state.image_height=height;
     state.image_color=0;
     state.image_depth=0;
-    std::cout<<"TODO: allocate and initialize state.image_color and state.image_depth."<<std::endl;
+    
+    state.image_color = new pixel[width * height];
+    for (pixel* p = state.image_color; p < state.image_color + (width * height); p++)
+        *p = make_pixel(0, 0, 0);
 }
 
 // This function will be called to render the data that has been stored in this class.
@@ -32,7 +36,40 @@ void initialize_render(driver_state& state, int width, int height)
 //   render_type::strip -    The vertices are to be interpreted as a triangle strip.
 void render(driver_state& state, render_type type)
 {
-    std::cout<<"TODO: implement rendering."<<std::endl;
+
+    switch (type) {
+
+        case render_type::triangle: {
+
+            data_geometry* temp[3];
+
+
+
+            for (size_t i = 0; i < 3; i++) {
+
+                //index for state.vertex_data; see driver_state.h
+                size_t j = i * state.floats_per_vertex;
+
+                temp[i] = new data_geometry();
+                memcpy(temp[i]->data, state.vertex_data + j, state.floats_per_vertex);
+            }
+
+            rasterize_triangle(state, (const data_geometry**) temp);
+
+
+
+            for (size_t i = 0; i < 3; i++)
+                delete temp[i];
+            break;
+        }
+
+
+        default: {
+            std::cout << "bro what type did u pass me tf" << std::endl;
+        }
+    }
+
+    std::cout<<"TODO: implement non-triangle rendering."<<std::endl;
 }
 
 
