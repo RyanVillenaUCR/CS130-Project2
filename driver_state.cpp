@@ -41,7 +41,7 @@ void render(driver_state& state, render_type type)
 
         case render_type::triangle: {
 
-            data_geometry* temp[3];
+            const data_geometry* temp[3];
 
 
 
@@ -54,7 +54,7 @@ void render(driver_state& state, render_type type)
                 memcpy(temp[i]->data, state.vertex_data + j, state.floats_per_vertex);
             }
 
-            rasterize_triangle(state, (const data_geometry**) temp);
+            rasterize_triangle(state, temp);
 
 
 
