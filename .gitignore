@@ -1,2 +1,6 @@
 *.o
 
+driver
+grading/
+output.png
+.sconsign.dblite
