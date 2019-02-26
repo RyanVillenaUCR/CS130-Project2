@@ -73,6 +73,7 @@ struct driver_state
 
     driver_state();
     ~driver_state();
+
 };
 
 // Set up the internal state of this class.  This is not done during the
@@ -99,5 +100,7 @@ void clip_triangle(driver_state& state, const data_geometry* in[3],int face=0);
 // function is responsible for rasterization, interpolation of data to
 // fragments, calling the fragment shader, and z-buffering.
 void rasterize_triangle(driver_state& state, const data_geometry* in[3]);
+
+float get_triangle_area(int x1, int y1, int x2, int y2, int x3, int y3);
 
 #endif
