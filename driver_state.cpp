@@ -156,7 +156,7 @@ void rasterize_triangle(driver_state& state, const data_geometry* in[3])
                 && bary_b >= 0
                 && bary_c >= 0) {
 
-                state.image_color[pixel_x + (pixel_y * state.image_width)] = make_pixel(0, 255, 0);
+                state.image_color[pixel_x + (pixel_y * state.image_width)] = make_pixel(255, 255, 255);
             }
         }
     }
