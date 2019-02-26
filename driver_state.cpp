@@ -1,5 +1,8 @@
 #include "driver_state.h"
+
+#include <iostream>
 #include <cstring>
+#include <vector>
 
 driver_state::driver_state()
 {
@@ -41,30 +44,55 @@ void render(driver_state& state, render_type type)
 
         case render_type::triangle: {
 
-            const data_geometry* temp[3];
+            data_geometry* temp_geometries = new data_geometry[3];
 
-            for (size_t i = 0; i < 3; i++) {
+            for (int i = 0; i < state.num_vertices; i++) {
 
-                //index for state.vertex_data
-                //see driver_state.h for why we have to do this madness
-                size_t j = i * state.floats_per_vertex;
+                //Initialize temp variables
+                size_t geo_index = i % 3;
+                float* this_data = state.vertex_data + (i * state.floats_per_vertex);
 
-                temp[i] = new data_geometry();
-                memcpy(temp[i]->data, state.vertex_data + j, state.floats_per_vertex);
+                //Initialize data_geometry for this vertex
+                temp_geometries[geo_index].data = this_data;
+
+                //Initialize data_vertex for this vertex
+                data_vertex temp_vertex;
+                temp_vertex.data = this_data;
+
+                //Call vertex shader
+                state.vertex_shader(temp_vertex, temp_geometries[geo_index], state.uniform_data);
+
+                //If we've iterated over three vertices,
+                //define these past 3 vertices as points on a triangle,
+                //and rasterize the triangle
+                if(geo_index == 2)
+                    rasterize_triangle(state, (const data_geometry**) &temp_geometries);
+
             }
 
-            rasterize_triangle(state, temp);
+            delete [] temp_geometries;
 
-
-
-            for (size_t i = 0; i < 3; i++)
-                delete temp[i];
             break;
         }
 
+        case render_type::indexed: {
+
+            break;
+        }
+
+        case render_type::fan: {
+
+            break;
+        }
+
+        case render_type::strip: {
+
+            break;
+        }
 
         default: {
-            std::cout << "bro what type did u pass me tf" << std::endl;
+            std::cerr << "bro what type did u pass me tf" << std::endl;
+            std::cerr << "like u passed me " << static_cast<int>(type) << ", can u not?" << std::endl;
         }
     }
 
@@ -92,6 +120,53 @@ void clip_triangle(driver_state& state, const data_geometry* in[3],int face)
 // fragments, calling the fragment shader, and z-buffering.
 void rasterize_triangle(driver_state& state, const data_geometry* in[3])
 {
-    std::cout<<"TODO: implement rasterization"<<std::endl;
+    int x[3];
+    int y[3];
+
+    for (size_t i = 0; i < 3; i++) {
+
+        x[i] = static_cast<int>
+            (0.5 * ( (state.image_width  * (*in)[i].gl_Position[0] / (*in)[i].gl_Position[3]) + state.image_width  - 1.0 ));
+        y[i] = static_cast<int>
+            (0.5 * ( (state.image_height * (*in)[i].gl_Position[1] / (*in)[i].gl_Position[3]) + state.image_height - 1.0 ));
+    }
+
+    int min_x = std::min(std::min(x[0], x[1]), x[2]);
+    int max_x = std::max(std::max(x[0], x[1]), x[2]);
+    int min_y = std::min(std::min(y[0], y[1]), y[2]);
+    int max_y = std::max(std::max(y[0], y[1]), y[2]);
+
+    //keep bounds within pixel grid
+    min_x = (min_x < 0 ? 0 : min_x);
+    min_y = (min_y < 0 ? 0 : min_y);
+    max_x = (max_x > state.image_width  ? state.image_width  - 1 : max_x);
+    max_y = (max_y > state.image_height ? state.image_height - 1 : max_y);
+
+    float area_ABC = get_triangle_area(x[0], y[0], x[1], y[1], x[2], y[2]);
+
+    for (int pixel_x = min_x; pixel_x <= max_x; pixel_x++) {
+        for (int pixel_y = min_y; pixel_y <= max_y; pixel_y++) {
+
+            float bary_a = area_ABC / get_triangle_area(pixel_x, pixel_y, x[1], y[1], x[2], y[2]);
+            float bary_b = area_ABC / get_triangle_area(x[0], y[0], pixel_x, pixel_y, x[2], y[2]);
+            float bary_c = area_ABC / get_triangle_area(x[0], y[0], x[1], y[1], pixel_x, pixel_y);
+
+            //if (pixel_x, pixel_y) is in the triangle, draw it
+            if (   bary_a >= 0
+                && bary_b >= 0
+                && bary_c >= 0) {
+
+                state.image_color[pixel_x + (pixel_y * state.image_width)] = make_pixel(0, 255, 0);
+            }
+        }
+    }
 }
 
+float get_triangle_area(int x1, int y1, int x2, int y2, int x3, int y3) {
+
+    return 0.5 * (
+          ((x2 * y3) - (x3 * y2))
+        - ((x1 * y3) - (x3 * y1))
+        + ((x1 * y2) - (x2 * y1))
+        );
+}
